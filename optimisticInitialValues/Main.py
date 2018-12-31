@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from optimisticInitialValue.Experiment import Experiment as Exp
+from optimisticInitialValues.Experiment import Experiment as Exp
 
 
 real_means = [1, 2, 3, 5]

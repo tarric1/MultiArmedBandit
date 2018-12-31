@@ -8,7 +8,7 @@ Experiment.py
 """
 
 import numpy as np
-from optimisticInitialValue.Bandit import Bandit
+from optimisticInitialValues.Bandit import Bandit
 
 
 class Experiment:

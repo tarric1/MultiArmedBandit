@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from epsilonGreedy.Experiment import Experiment as EpsGreedyExp
-from optimisticInitialValue.Experiment import Experiment as OptInitValExp
+from optimisticInitialValues.Experiment import Experiment as OptInitValExp
 
 real_means = [1, 2, 3, 5]
 N = 100000
