@@ -18,9 +18,6 @@ class Experiment:
     # n          : Numero totale di giocate da eseguire durante l'esperimento.
     @staticmethod
     def run(real_means, upper_limit, n):
-        # Numero di slot machine.
-        m = len(real_means)
-
         # Le slot machine (i banditi)...
         bandits = [Bandit(real_mean, upper_limit) for real_mean in real_means]
 
