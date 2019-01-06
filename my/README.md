@@ -35,7 +35,7 @@ Dobbiamo provare a giocare con tutte, registriamo per ogni slot machine:
 il rapporto ci fornisce una stima della probabilità di vincere:
 
 $$
-\large \widetilde{p}_{win_{i}}=\frac{n_{win_{i}}}{n_{i}}
+\large \tilde{p}_{win_{i}}=\frac{n_{win_{i}}}{n_{i}}
 $$
 
 Facciamo una simulazione: adoperiamo Python!
