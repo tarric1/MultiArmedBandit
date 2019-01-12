@@ -20,12 +20,12 @@ class Experiment:
         for i in range(n):
             r[i] = agent.play()
 
-        print('q = {0}'.format(agent.q))
-        print('pwin = {0}'.format(bandit.pwin))
-
         rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
-        plt.plot(rewards_trend, label='simulation')
-        plt.plot([0, n - 1], [bandit.pwin, bandit.pwin], label='pwin = {0}'.format(bandit.pwin))
+        plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))
+
+        plt.plot([0, n - 1], [bandit.pwin, bandit.pwin], label='pwin = {0:.5f}'.format(bandit.pwin))
+        print('q = {0:.5f}  pwin = {1:.5f}'.format(agent.q, bandit.pwin))
+
         plt.xscale('linear')
         plt.legend()
         plt.show()

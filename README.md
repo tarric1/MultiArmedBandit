@@ -15,10 +15,10 @@ Ehi... ma non sappiamo giocare a poker!
 
 Giochiamo alle slot machine!
 
-Siamo andati in un casinò retrò, quindi le slot machine sono quelle meccaniche a 3 rulli con 20 simboli ciascuno e con una leva, il braccio, in inglese _arm_, che bisogna tirare per far ruotare i rulli. Si vince quando su tutti rulli compare lo stesso simbolo. Che probabilità abbiamo di vincere?
+Siamo andati in un casinò retrò, quindi le slot machine sono quelle meccaniche a 3 rulli con 10 simboli ciascuno e con una leva, il braccio, in inglese _arm_, che bisogna tirare per far ruotare i rulli. Si vince quando su tutti rulli compare lo stesso simbolo. Che probabilità abbiamo di vincere?
 
 $$
-\large p_{win}=\frac{1}{20^{3}}=0.000125
+\large p_{win}=\frac{1}{10^{3}}=0.001
 $$
 
 Un po' bassa, non per nulla le chiamano _macchinette mangia soldi_ ed i nostri amici inglesi le chiamano _bandit_, _armed bandit_ per la precisione, letteralmente _bandito bracciuto_, facendo riferimento alla leva che le aziona.
@@ -38,9 +38,7 @@ $$
 \large \tilde{p}_{win_{i}}=\frac{n_{win_{i}}}{n_{i}}
 $$
 
-Facciamo una simulazione: adoperiamo Python!
-
-> Sono un fanatico dell'object oriented, per cui adopererò il supporto all'OOP che fortunatamente Python fornisce e, lo so che molti mi prenderanno per pazzo, ma non voglio far arrabbiare Zio Bob (Robert C. Martin, se non lo conoscete fatevi aiutare da Google e scoprirete perché), ed adopererò lo static typing che Python supporta decentemente dalla versione 3.6.
+Facciamo una simulazione adoperando Python.
 
 Tanto per cominciare dobbiamo modellare il bandito, la slot machine:
 
@@ -51,8 +49,8 @@ class Bandit:
     def __init__(self, reels: int, symbols: int):
         self.pwin: float = 1 / np.power(symbols, reels)
 
-    def pull(self) -> bool:
-        return np.random.rand() < self.pwin
+    def interact(self) -> float:
+        return 1 if np.random.rand() < self.pwin else 0
 ```
 
 Vediamo com'è fatta la classe ```Bandit```.
@@ -63,7 +61,7 @@ Il costruttore accetta come parametri di input:
 
 e calcola la probabilità di vincere ```pwin```.
 
-Il metodo ```pull``` simula l'azione di giocare alla slot machine, per cui genera un numero casuale uniformemente distribuito fra 0 ed 1, se è minore della probabilità di vincere, abbiamo vinto.
+Il metodo ```interact``` simula l'azione di giocare alla slot machine, per cui genera un numero casuale uniformemente distribuito fra 0 ed 1, se è minore della probabilità di vincere, abbiamo vinto ed il metodo restituisce 1, altrimenti restituisce 0.
 
 Abbiamo detto però, che le slot machine sono meccaniche, per cui la probabilità di vincere non è quella teorica, ma non può allontanarsi molto da questa, per cui aggiungiamo al costruttore un'ulteriore parametro ```delta``` che indica questo scostamento:
 
@@ -74,99 +72,99 @@ class Bandit:
     def __init__(self, reels: int, symbols: int, delta: float):
         self.pwin: float = 1 / np.power(symbols, reels) + delta
 
-    def pull(self) -> bool:
-        return np.random.rand() < self.pwin
+    def interact(self) -> float:
+        return 1 if np.random.rand() < self.pwin else 0
 ```
 
 Adesso dobbiamo modellare il giocatore, che gioca alle slot machine e registra le vincite per stimare la probabilità di vincita:
 
 ```python
+from base.Bandit import Bandit
+
 class Agent:
-    def __init__(self):
-        self.bets: int = 0
-        self.winning_bets: int = 0
+    def __init__(self, bandit: Bandit):
+        self.bandit: Bandit = bandit
+        self.k: int = 0
+        self.q: float = 0
 
-    def update(self, winning_bet: bool):
-        self.bets += 1
-        if winning_bet:
-            self.winning_bets += 1
+    def do(self) -> float:
+        return self.bandit.interact()
 
-    def estimate(self) -> float:
-        return float(self.winning_bets) / self.bets
+    def update(self, r: float):
+        self.q += (r - self.q) / (self.k + 1)
+        self.k += 1
+
+    def play(self) -> int:
+        r: float = self.do()
+        self.update(r)
+        return r
+
 ```
 
-La classe ```Agent``` ha due attributi:
+La classe ```Agent``` ha tre attributi:
 
-- ```bets```: numero di volte che il giocatore ha giocato;
-- ```winning_bets```: numero di volte che il giocatore ha vinto;
+- ```bandit```: la slot machine con cui giocare, ossia il puntatore all'istanza della classe ```Bandit``` che simula la slot machine;
+- ```k```: numero di volte che il giocatore ha giocato;
+- ```q```: probabilità stimata di vincere.
 
-corrispondono rispettivamente a:
+Gli ultimi due attributi corrispondono rispettivamente a:
 $$
-\large n_{i}, n_{win_{i}}
+\large n_{i}, \tilde{p}_{win_{i}}
 $$
-La classe inoltre ha il metodo ```update``` che simula l'azione di registrazione del numero di giocate (```bets```) e del numero di vincite (```winning_bets```) e il metodo ```estimate``` che calcola la probabilità stimata di vincere.
+Inoltre la classe ha tre metodi:
 
-Manca una componente che modella l'interazione fra il giocatore e la slot machine; questo lavoro è lasciato all'ambiente nel quale si trovano i due attori; rappresenta il mezzo che permette il contatto fra loro:
+- ```do()```: simula l'azione di giocare alla slot machine, per cui richiama il metodo ```interact()``` dell'istanza della ```Bandit```; il metodo restituisce l'esito della giocata, per cui 1 se si vince, 0 se si perde;
+- ```update(float)```: aggiorna il numero di volte che il giocatore ha giocato ```k``` e la probabilità stimata di vincere ```q```, in base all'esito ```r``` della giocata;
+- ```play()```: richiama in cascata i metodo ```do()``` e ```update(float)``` passando a quest'ultimo l'esito della giocata ottenuto dall'invocazione del primo metodo.  
+
+Facciamo un'esperimento con le due classi​:​
 
 ```python
-from Bandit import Bandit
-from Agent import Agent
-
-class Environment:
-    def __init__(self, bandit: Bandit, agent: Agent):
-        self.bandit = bandit
-        self.agent = agent
-
-    def doInteraction(self):
-        winning_bet: bool = self.bandit.pull()
-        self.agent.update(winning_bet)
-```
-
-La classe ```Environment``` ha due attributi:
-
-- ```bandit```: la slot machine;
-- ```agent```: il giocatore;
-
-e il metodo ```doInteraction``` che simula l'interazione fra la slot machine e il giocatore: esegue sulla prima l'azione di tirare il braccio, acquisisce l'esito della giocata e comunica l'esito al secondo.
-
-Infine eseguiamo l'esperimento:
-
-```python
-from Bandit import Bandit
-from Agent import Agent
-from Environment import Environment
+from typing import List
+from base.Bandit import Bandit
+from base.Agent import Agent
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Experiment:
     @staticmethod
     def main():
         reels: int = 3
-        symbols: int = 20
-        delta: float = 0
-        n: int = 100000
+        symbols: int = 10
+        delta: float = 0.0002
+        n: int = 1000000
 
         bandit: Bandit = Bandit(reels, symbols, delta)
-        agent: Agent = Agent()
-        environment: Environment = Environment(bandit, agent)
+        agent: Agent = Agent(bandit)
 
-        for _ in range(n):
-            environment.doInteraction()
+        r: List[float] = [0] * n
+        for i in range(n):
+            r[i] = agent.play()
 
-        est_pwin: float = agent.estimate()
-        print('Estimated pwin: %f' % est_pwin)
+        rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
+        plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))
+
+        plt.plot([0, n - 1], [bandit.pwin, bandit.pwin],
+                 label='pwin = {0:.5f}'.format(bandit.pwin))
+        print('q = {0:.5f}  pwin = {1:.5f}'.format(agent.q, bandit.pwin))
+
+        plt.xscale('linear')
+        plt.legend()
+        plt.show()
 
 if __name__ == "__main__":
     Experiment.main()
 ```
 
-La classe ```Experiment``` ha il metodo statico ```main``` che crea l'oggetto rappresentate la slot machine, quello rappresentante il giocatore, quindi crea l'ambiente ed esegue 100000 interazioni e per concludere visualizza la probabilità stimata di vincere.
+La classe ```Experiment``` ha il metodo statico ```main``` che crea l'oggetto rappresentate la slot machine, quello rappresentante il giocatore, quindi esegue 1000000 di interazioni e per concludere visualizza l'andamento della probabilità stimata di vincere:
 
-Segue un esempio d'esecuzione dell'esperimento:
+![](D:\atarr\PycharmProjects\MultiArmedBandit\first_test.svg)
 
 ```
-Estimated pwin: 0.000100
+q = 0.00121  pwin = 0.00120
 ```
 
-Abbiamo adesso le basi per andare avanti: ricordiamo che il 
+Ok, funziona, adesso le basi per andare avanti... 
 
 
 
