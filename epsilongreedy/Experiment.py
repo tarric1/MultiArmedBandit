@@ -1,6 +1,6 @@
 from typing import List
-from mab2.Bandit import Bandit
-from mab2.Agent import Agent
+from base.Bandit import Bandit
+from epsilongreedy.Agent import Agent
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -21,6 +21,9 @@ class Experiment:
         for i in range(n):
             r[i] = agent.play()
 
+        print('q = {0}'.format(agent.q))
+        print('pwin = {0}'.format(bandit.pwin for bandit in bandits))
+
         rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
         plt.plot(rewards_trend, label='simulation')
         for bandit in bandits:
@@ -28,8 +31,6 @@ class Experiment:
         plt.xscale('linear')
         plt.legend()
         plt.show()
-
-        print(agent.q)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 from typing import List
-from mab2.Bandit import Bandit
+from base.Bandit import Bandit
 import numpy as np
 
 
@@ -20,15 +20,15 @@ class Agent:
             a = np.argmax(self.q)
         return a
 
-    def do(self, a: int) -> int:
+    def do(self, a: int) -> float:
         return self.bandits[a].interact()
 
-    def update(self, a: int, r: int):
+    def update(self, a: int, r: float):
         self.q[a] += (r - self.q[a]) / (self.k[a] + 1)
         self.k[a] += 1
 
     def play(self) -> int:
         a: int = self.choose()
-        r: int = self.do(a)
+        r: float = self.do(a)
         self.update(a, r)
         return r
