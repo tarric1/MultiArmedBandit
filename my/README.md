@@ -167,3 +167,26 @@ Estimated pwin: 0.000100
 ```
 
 Abbiamo adesso le basi per andare avanti: ricordiamo che il 
+
+
+
+
+
+
+
+### APPUNTI  ADDESTRAMENTO  CON  RINFORZO
+
+Serve per permettere ad un <u>agente</u> di agire in un <u>ambiente</u>.
+
+Quando l'agente compie delle azioni nell'ambiente, riceve dei <u>feedback</u> (<u>ricompense</u>) dall'ambiente. Il feedback può essere anche negativo, in questo caso piuttosto che di ricompensa si dovrebbe parlare di <u>penalità</u>, però se consideriamo la penalità come una <u>ricompensa negativa</u>, possiamo continuare ad usare il termine ricompensa.
+
+L'agente deve raggiungere un <u>obiettivo</u> (<u>goal</u>).
+
+Le diverse <u>configurazioni</u> nelle quali può trovarsi l'ambiente costituiscono gli <u>stati</u> dell'ambiente.
+
+L'obiettivo dell'agente è <u>massimizzare le ricompense future</u> e non solo quelle immediate (<i>spiegare meglio</i>).
+
+<u>Azione</u>: E' ciò che l'agente può fare nell'ambiente.
+
+**L'ambiente di trova in uno stato s(t), l'agente compie un'azione a(t), questa fa passare l'ambiente nello stato s(t+1) e l'agente riceve una ricompensa (che può essere negativa) r(t+1).**
+
