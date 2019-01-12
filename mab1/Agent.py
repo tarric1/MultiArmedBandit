@@ -1,5 +1,8 @@
+from mab1.Bandit import Bandit
+
+
 class Agent:
-    def __init__(self):
+    def __init__(self, bandit: Bandit):
         self.bets: int = 0
         self.winning_bets: int = 0
 

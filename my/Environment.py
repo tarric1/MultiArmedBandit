@@ -19,7 +19,7 @@ class Environment:
         outcomes = np.empty(n)
         for i in range(n):
             j = self.agent.choose_action();
-            winning_bet = self.bandits[j].play()
+            winning_bet = self.bandits[j].play
             self.agent.update(j, winning_bet)
             outcomes[i] = 1 if winning_bet else 0
         return outcomes

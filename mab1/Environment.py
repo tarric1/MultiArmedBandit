@@ -8,5 +8,5 @@ class Environment:
         self.agent = agent
 
     def doInteraction(self):
-        winning_bet: bool = self.bandit.pull()
+        winning_bet: bool = self.bandit.pull
         self.agent.update(winning_bet)
