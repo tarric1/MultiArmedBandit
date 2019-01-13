@@ -28,7 +28,7 @@ class Experiment:
             plt.plot([0, n - 1], [bandits[i].pwin, bandits[i].pwin], label='pwin = {0:.5f}'.format(bandits[i].pwin))
             print('Bandit #{0} : q = {1:.5f}  pwin = {2:.5f}'.format(i, agent.q[i], bandits[i].pwin))
 
-        plt.xscale('linear')
+        plt.xscale('log')
         plt.legend()
         plt.show()
 

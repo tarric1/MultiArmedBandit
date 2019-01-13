@@ -145,11 +145,10 @@ class Experiment:
         rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
         plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))
 
-        plt.plot([0, n - 1], [bandit.pwin, bandit.pwin],
-                 label='pwin = {0:.5f}'.format(bandit.pwin))
+        plt.plot([0, n - 1], [bandit.pwin, bandit.pwin], label='pwin = {0:.5f}'.format(bandit.pwin))
         print('q = {0:.5f}  pwin = {1:.5f}'.format(agent.q, bandit.pwin))
 
-        plt.xscale('linear')
+        plt.xscale('log')
         plt.legend()
         plt.show()
 
@@ -162,7 +161,7 @@ La classe ```Experiment``` ha il metodo statico ```main``` che crea l'oggetto ra
 ![](first_test.png)
 
 ```
-q = 0.00119  pwin = 0.00120
+q = 0.00115  pwin = 0.00120
 ```
 
 Ok, funziona ma non dimentichiamo che l'obiettivo è modellare il giocatore in modo che possa individuare  la slot machine con la probabilità di vincere più favorevole, per cui modifichiamo la classe ```Agent```: 
@@ -196,13 +195,13 @@ class Agent:
         return r
 ```
 
-L'attributo ```bandit``` ha lasciato il posto a ```bandits``` che contiene la lista delle slot machine cui giocare, mentre gli attributi ```k``` e ```q``` sono diventati anch'essi delle liste contenenti per ogni slot machine il numero di volte che il giocatore ha giocato e la probabilità stimata di vincere.
+L'attributo ```bandit``` ha lasciato il posto a ```bandits``` che contiene la lista delle slot machine cui giocare, mentre gli attributi ```k``` e ```q``` sono diventati anch'essi delle liste contenenti per ogni slot machine il numero di volte che il giocatore ha giocato e la probabilità stimata di vincere. Si è aggiunto l'attributo ```n``` che contiene il numero di slot machine.
 
 E' stato aggiunto il metodo ```choose()``` che in maniera casuale con una distribuzione uniforme sceglie la slot machine cui giocare.
 
 I metodi ```do(int)``` ed ```update(int, float)``` sono stati modificati in modo da accettare come parametro di input l'indicazione della slot machine cui giocare, mentre il metodo ```play()``` prima di chiamare in sequenza i due metodi, invoca ```choose()```.
 
-Facciamo un altro esperimento e verifichiamo che la classe ```Agent``` riesca ad individuare la slot machine con la probabilità di vincere più favorevole:
+Facciamo un altro esperimento con tre slot machine e verifichiamo che la classe ```Agent``` riesca ad individuare quella con la probabilità di vincere più favorevole:
 
 ```python
 from typing import List
@@ -233,7 +232,7 @@ class Experiment:
             plt.plot([0, n - 1], [bandits[i].pwin, bandits[i].pwin], label='pwin = {0:.5f}'.format(bandits[i].pwin))
             print('Bandit #{0} : q = {1:.5f}  pwin = {2:.5f}'.format(i, agent.q[i], bandits[i].pwin))
 
-        plt.xscale('linear')
+        plt.xscale('log')
         plt.legend()
         plt.show()
 
@@ -241,8 +240,128 @@ if __name__ == "__main__":
     Experiment.main()
 ```
 
+![](random_policy.png)
 
+```
+Bandit #0 : q = 0.00118  pwin = 0.00120
+Bandit #1 : q = 0.00106  pwin = 0.00110
+Bandit #2 : q = 0.00096  pwin = 0.00090
+```
+Cosa possiamo osservare?
 
+1. La probabilità media stimata di vincere è 0.00107, esattamente uguale a quella teorica ossia, considerando che le giocate sono uniformemente distribuite fra le 3 slot machine è:
+
+$$
+\large \frac{0.00120 + 0.0011 + 0.0009}{3}=0.00107
+$$
+
+2. Siamo riusciti ad individuare la slot machine con la probabilità di vincere a noi più favorevole, ossia è quella che ha il valore di ```q``` più alto, ossia la prima.
+
+3. Non abbiamo sfruttato quest'ultima informazione, in quanto abbiamo adoperato tutte le giocate e quindi tutte i gettoni a nostra disposizione, solo per individuare la slot machine migliore con la quale giocare, ma poi non ci abbiamo giocato.
+
+Miglioriamo il nostro ```Agent``` e facciamo in modo che una parte delle giocate sia adoperata per individuare la slot machine migliore con cui giocare e la parte restante per giocare alla migliore:
+
+```python
+from typing import List
+from base.Bandit import Bandit
+import numpy as np
+
+class Agent:
+    def __init__(self, epsilon: float, bandits: List[Bandit]):
+        self.epsilon: float = epsilon
+        self.bandits: List[Bandit] = bandits
+        self.n: int = len(bandits)
+        self.k: List[int] = [0] * self.n
+        self.q: List[float] = [0] * self.n
+
+    def choose(self) -> int:
+        a: int = 0
+        p: float = np.random.random()
+        if p < self.epsilon:
+            a = np.random.choice(self.n)
+        else:
+            a = np.argmax(self.q)
+        return a
+
+    def do(self, a: int) -> float:
+        return self.bandits[a].interact()
+
+    def update(self, a: int, r: float):
+        self.q[a] += (r - self.q[a]) / (self.k[a] + 1)
+        self.k[a] += 1
+
+    def play(self) -> int:
+        a: int = self.choose()
+        r: float = self.do(a)
+        self.update(a, r)
+        return r
+```
+
+Vediamo cos'è cambiato:
+
+- è stato aggiunto l'attributo ```epsilon``` che indica la percentuale delle giocate da adoperare per la ricerca della slot machine migliore; se ```epsilon=0.05``` significa che il 5% delle giocate verrà adoperato a questo scopo;
+- il metodo ```choose()``` genera un numero casuale uniformemente distribuito fa 0 ed 1, se questo è inferiore a ```epsilon``` la slot machine viene scelta a caso come prima, altrimenti si sceglie quella che fino a quel momento ha la probabilità stimata di vincere più alta.
+
+Facciamo un esperimento:
+
+```python
+from typing import List
+from base.Bandit import Bandit
+from epsilongreedy.Agent import Agent
+import numpy as np
+import matplotlib.pyplot as plt
+
+class Experiment:
+    @staticmethod
+    def main():
+        reels: int = 3
+        symbols: int = 10
+        deltas: List[float] = [0.0002, 0.0001, -0.0001]
+        epsilon: float = 0.05
+        n: int = 1000000
+
+        bandits: List[Bandit] = [Bandit(reels, symbols, delta) for delta in deltas]
+        agent: Agent = Agent(epsilon, bandits)
+
+        r: List[int] = [0] * n
+        for i in range(n):
+            r[i] = agent.play()
+
+        rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
+        plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))
+
+        for i in range(len(bandits)):
+            plt.plot([0, n - 1], [bandits[i].pwin, bandits[i].pwin], label='pwin = {0:.5f}'.format(bandits[i].pwin))
+            print('Bandit #{0} : q = {1:.5f}  pwin = {2:.5f}'.format(i, agent.q[i], bandits[i].pwin))
+
+        plt.xscale('log')
+        plt.legend()
+        plt.show()
+
+if __name__ == "__main__":
+    Experiment.main()
+```
+![](epsilon_greedy_policy.png)
+
+```
+Bandit #0 : q = 0.00120  pwin = 0.00120
+Bandit #1 : q = 0.00101  pwin = 0.00110
+Bandit #2 : q = 0.00110  pwin = 0.00090
+```
+
+La cosa che balza all'occhio è che adesso la probabilità che abbiamo di vincere è salita a 0.00119 e, considerando che la massima teorica è 0.0012, possiamo ritenerci più che soddisfatti.
+
+## Cosa abbiamo imparato?
+
+Bene... traiamo le nostre conclusioni.
+
+Tanto per cominciare ci tocca continuare a lavorare perché in questo modo non diventeremo mai ricchi: abbiamo dovuto fare 1000000 di giocate e, ipotizzando che ogni gettone costi 50 centesimi di €, dovremmo spendere 500000 € ed in teoria potremmo vincere circa 417 € nell'ipotesi che tutto l'incasso sia convertito in montepremi, cosa ovviamente irrealistica.
+
+Non è tutto perduto però perché abbiamo imparato senza volerlo alcuni concetti fondamentali dell'apprendimento con rinforzo e questo magari potrebbe stimolare il nostro interesse per questo argomento e magari un domani potremmo diventare il CEO della Cyberdyne e produrre i nostri Terminator...
+
+Per cominciare nell'apprendimento con rinforzo ...
+
+PARLARE DEL PROBLEMA DELL'EXPLORATION-EXPLOITATION!!!
 
 ### APPUNTI  ADDESTRAMENTO  CON  RINFORZO
 
