@@ -87,15 +87,12 @@ class Agent:
         self.k: int = 0
         self.q: float = 0
 
-    def do(self) -> float:
-        return self.bandit.interact()
-
     def update(self, r: float):
         self.q += (r - self.q) / (self.k + 1)
         self.k += 1
 
-    def play(self) -> int:
-        r: float = self.do()
+    def do(self) -> float:
+        r: float = self.bandit.interact()
         self.update(r)
         return r
 ```
@@ -114,11 +111,10 @@ $$
 
 Inoltre la classe ha tre metodi:
 
-- ```do()```: simula l'azione di giocare alla slot machine, per cui richiama il metodo ```interact()``` dell'istanza della ```Bandit```; il metodo restituisce l'esito della giocata, per cui 1 se si vince, 0 se si perde;
-- ```update(float)```: aggiorna il numero di volte che il giocatore ha giocato ```k``` e la probabilità stimata di vincere ```q```, in base all'esito ```r``` della giocata;
-- ```play()```: richiama in cascata i metodo ```do()``` e ```update(float)``` passando a quest'ultimo l'esito della giocata ottenuto dall'invocazione del primo metodo.  
+- ```update(float)```: simula l'operazione di registrazione dei dati, ossia aggiorna il numero di volte ```k``` che il giocatore ha giocato e la probabilità stimata di vincere ```q```, in base all'esito ```r``` della giocata;
+- ```do()```: simula l'azione di giocare alla slot machine, per cui richiama il metodo ```interact()``` dell'istanza di ```Bandit```, e di registrazione dei dati tramite il metodo ```update(float)```.  
 
-Facciamo un'esperimento con le due classi:
+Facciamo un esperimento con le due classi:
 
 ```python
 from typing import List
@@ -140,7 +136,7 @@ class Experiment:
 
         r: List[float] = [0] * n
         for i in range(n):
-            r[i] = agent.play()
+            r[i] = agent.do()
 
         rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
         plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))
@@ -181,16 +177,13 @@ class Agent:
     def choose(self) -> int:
         return np.random.choice(self.n)
 
-    def do(self, a: int) -> float:
-        return self.bandits[a].interact()
-
     def update(self, a: int, r: float):
         self.q[a] += (r - self.q[a]) / (self.k[a] + 1)
         self.k[a] += 1
 
-    def play(self) -> int:
+    def do(self) -> float:
         a: int = self.choose()
-        r: float = self.do(a)
+        r: float = self.bandits[a].interact()
         self.update(a, r)
         return r
 ```
@@ -199,7 +192,7 @@ L'attributo ```bandit``` ha lasciato il posto a ```bandits``` che contiene la li
 
 E' stato aggiunto il metodo ```choose()``` che in maniera casuale con una distribuzione uniforme sceglie la slot machine cui giocare.
 
-I metodi ```do(int)``` ed ```update(int, float)``` sono stati modificati in modo da accettare come parametro di input l'indicazione della slot machine cui giocare, mentre il metodo ```play()``` prima di chiamare in sequenza i due metodi, invoca ```choose()```.
+Il metodo ```update(int, float)``` è stato modificato in modo da accettare come parametro di input l'indicazione della slot machine cui giocare, mentre il metodo ```do()``` in più invoca ```choose()```, in modo da scegliere la slot machine su cui giocare.
 
 Facciamo un altro esperimento con tre slot machine e verifichiamo che la classe ```Agent``` riesca ad individuare quella con la probabilità di vincere più favorevole:
 
@@ -223,7 +216,7 @@ class Experiment:
 
         r: List[float] = [0] * n
         for i in range(n):
-            r[i] = agent.play()
+            r[i] = agent.do()
 
         rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
         plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))
@@ -283,16 +276,13 @@ class Agent:
             a = np.argmax(self.q)
         return a
 
-    def do(self, a: int) -> float:
-        return self.bandits[a].interact()
-
     def update(self, a: int, r: float):
         self.q[a] += (r - self.q[a]) / (self.k[a] + 1)
         self.k[a] += 1
 
-    def play(self) -> int:
+    def do(self) -> float:
         a: int = self.choose()
-        r: float = self.do(a)
+        r: float = self.bandits[a].interact()
         self.update(a, r)
         return r
 ```
@@ -325,7 +315,7 @@ class Experiment:
 
         r: List[int] = [0] * n
         for i in range(n):
-            r[i] = agent.play()
+            r[i] = agent.do()
 
         rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
         plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))
@@ -355,9 +345,23 @@ La cosa che balza all'occhio è che adesso la probabilità che abbiamo di vincer
 
 Bene... traiamo le nostre conclusioni.
 
-Tanto per cominciare ci tocca continuare a lavorare perché in questo modo non diventeremo mai ricchi: abbiamo dovuto fare 1000000 di giocate e, ipotizzando che ogni gettone costi 50 centesimi di €, dovremmo spendere 500000 € ed in teoria potremmo vincere circa 417 € nell'ipotesi che tutto l'incasso sia convertito in montepremi, cosa ovviamente irrealistica.
+~~~sequence
+```mermaid
+sequenceDiagram
+    participant Alice
+    participant Bob
+    Alice->John: Hello John, how are you?
+    loop Healthcheck
+        John->John: Fight against hypochondria
+    end
+    Note right of John: Rational thoughts <br/>prevail...
+    John-->Alice: Great!
+    John->Bob: How about you?
+    Bob-->John: Jolly good!
+```
+~~~
 
-Non è tutto perduto però perché abbiamo imparato senza volerlo alcuni concetti fondamentali dell'apprendimento con rinforzo e questo magari potrebbe stimolare il nostro interesse per questo argomento e magari un domani potremmo diventare il CEO della Cyberdyne e produrre i nostri Terminator...
+
 
 Per cominciare nell'apprendimento con rinforzo ...
 

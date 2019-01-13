@@ -19,7 +19,7 @@ class Experiment:
 
         r: List[int] = [0] * n
         for i in range(n):
-            r[i] = agent.play()
+            r[i] = agent.do()
 
         rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
         plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))

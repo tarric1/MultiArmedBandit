@@ -7,14 +7,11 @@ class Agent:
         self.k: int = 0
         self.q: float = 0
 
-    def do(self) -> float:
-        return self.bandit.interact()
-
     def update(self, r: float):
         self.q += (r - self.q) / (self.k + 1)
         self.k += 1
 
-    def play(self) -> int:
-        r: float = self.do()
+    def do(self) -> float:
+        r: float = self.bandit.interact()
         self.update(r)
         return r

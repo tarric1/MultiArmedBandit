@@ -13,15 +13,12 @@ class Agent:
     def choose(self) -> int:
         return np.random.choice(self.n)
 
-    def do(self, a: int) -> float:
-        return self.bandits[a].interact()
-
     def update(self, a: int, r: float):
         self.q[a] += (r - self.q[a]) / (self.k[a] + 1)
         self.k[a] += 1
 
-    def play(self) -> int:
+    def do(self) -> float:
         a: int = self.choose()
-        r: float = self.do(a)
+        r: float = self.bandits[a].interact()
         self.update(a, r)
         return r
