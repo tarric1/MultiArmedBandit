@@ -4,8 +4,7 @@ import numpy as np
 
 
 class Agent:
-    def __init__(self, epsilon: float, bandits: List[Bandit]):
-        self.epsilon: float = epsilon
+    def __init__(self, bandits: List[Bandit]):
         self.bandits: List[Bandit] = bandits
         self.n: int = len(bandits)
         self.k: List[int] = [0] * self.n

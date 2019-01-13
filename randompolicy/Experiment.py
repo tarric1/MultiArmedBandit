@@ -11,11 +11,10 @@ class Experiment:
         reels: int = 3
         symbols: int = 10
         deltas: List[float] = [0.0002, 0.0001, -0.0001]
-        epsilon: float = 0.05
         n: int = 1000000
 
         bandits: List[Bandit] = [Bandit(reels, symbols, delta) for delta in deltas]
-        agent: Agent = Agent(epsilon, bandits)
+        agent: Agent = Agent(bandits)
 
         r: List[float] = [0] * n
         for i in range(n):
