@@ -345,7 +345,7 @@ La cosa che balza all'occhio è che adesso la probabilità che abbiamo di vincer
 
 Bene... traiamo le nostre conclusioni.
 
-~~~sequence
+~~~mermaid
 ```mermaid
 sequenceDiagram
     participant Alice
