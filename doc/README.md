@@ -159,10 +159,10 @@ if __name__ == "__main__":
 
 La classe ```Experiment``` ha il metodo statico ```main``` che crea l'oggetto rappresentate la slot machine, quello rappresentante il giocatore, quindi esegue 1000000 di interazioni e per concludere visualizza l'andamento della probabilità stimata di vincere:
 
-![](first_test.svg)
+![](first_test.png)
 
 ```
-q = 0.00121  pwin = 0.00120
+q = 0.00119  pwin = 0.00120
 ```
 
 Ok, funziona ma non dimentichiamo che l'obiettivo è modellare il giocatore in modo che possa individuare  la slot machine con la probabilità di vincere più favorevole, per cui modifichiamo la classe ```Agent```: 
