@@ -1,6 +1,6 @@
 from typing import List
 from src.base.Bandit import Bandit
-from src.randompolicy.Agent import Agent
+from src.randompolicy.Player import Player
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -14,18 +14,18 @@ class Experiment:
         n: int = 1000000
 
         bandits: List[Bandit] = [Bandit(reels, symbols, delta) for delta in deltas]
-        agent: Agent = Agent(bandits)
+        player: Player = Player(bandits)
 
         r: List[float] = [0] * n
         for i in range(n):
-            r[i] = agent.do()
+            r[i] = player.play()
 
         rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
         plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))
 
         for i in range(len(bandits)):
             plt.plot([0, n - 1], [bandits[i].pwin, bandits[i].pwin], label='pwin = {0:.5f}'.format(bandits[i].pwin))
-            print('Bandit #{0} : q = {1:.5f}  pwin = {2:.5f}'.format(i, agent.q[i], bandits[i].pwin))
+            print('Bandit #{0} : q = {1:.5f}  pwin = {2:.5f}'.format(i, player.q[i], bandits[i].pwin))
 
         plt.xscale('log')
         plt.legend()

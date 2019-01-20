@@ -7,7 +7,7 @@ Bene, andiamo al casinò, però non siamo degli sprovveduti, quindi dobbiamo sce
 
 Alla roulette?
 
-Non sembra una buona idea, al tavolo c'è quel signore pelato che sta vincendo tutto!
+Non sembra una buona idea, al tavolo c'è quel signore pelato e barbuto che sta vincendo tutto!
 
 Giochiamo a poker?
 
@@ -21,11 +21,11 @@ $$
 \large p_{win}=\frac{1}{10^{3}}=0.001
 $$
 
-Un po' bassa, non per nulla le chiamano _macchinette mangia soldi_ ed i nostri amici inglesi le chiamano _bandit_, _armed bandit_ per la precisione, letteralmente _bandito bracciuto_, facendo riferimento alla leva che le aziona.
+Un po' bassa, non per nulla le chiamano _macchinette mangia soldi_ ed i nostri amici inglesi le chiamano _bandit_, _armed bandit_ per la precisione, letteralmente _bandito bracciuto_, facendo riferimento alla leva (il braccio) che le aziona.
 
-Va bene, non disperiamoci, nel casinò c'è una file di slot machine, sono ancora quelle meccaniche e la probabilità di vincere non è certamente quella teorica che abbiamo calcolato.
+Va bene, non disperiamoci, nel casinò c'è una fila di slot machine, sono ancora quelle meccaniche e la probabilità di vincere non è certamente quella teorica che abbiamo calcolato.
 
-Come facciamo ad individuare la slot machine con la probabilità di vincere a noi più favorevole?
+Come facciamo ad individuare la slot machine con la probabilità di vincere più alta e quindi a noi più favorevole?
 
 Dobbiamo provare a giocare con tutte, registriamo per ogni slot machine:
 
@@ -49,7 +49,7 @@ class Bandit:
     def __init__(self, reels: int, symbols: int):
         self.pwin: float = 1 / np.power(symbols, reels)
 
-    def interact(self) -> float:
+    def pull(self) -> float:
         return 1 if np.random.rand() < self.pwin else 0
 ```
 
@@ -61,7 +61,7 @@ Il costruttore accetta come parametri di input:
 
 e calcola la probabilità di vincere ```pwin```.
 
-Il metodo ```interact()``` simula l'azione di giocare alla slot machine, per cui genera un numero casuale uniformemente distribuito fra 0 ed 1, se è minore della probabilità di vincere, abbiamo vinto ed il metodo restituisce 1, altrimenti restituisce 0.
+Il metodo ```pull()``` simula l'azione di giocare alla slot machine, per cui genera un numero casuale uniformemente distribuito fra 0 ed 1: se è minore della probabilità di vincere, abbiamo vinto ed il metodo restituisce 1, altrimenti restituisce 0.
 
 Abbiamo detto però, che le slot machine sono meccaniche, per cui la probabilità di vincere non è quella teorica, ma non può allontanarsi molto da questa, per cui aggiungiamo al costruttore un'ulteriore parametro ```delta``` che indica questo scostamento:
 
@@ -72,7 +72,7 @@ class Bandit:
     def __init__(self, reels: int, symbols: int, delta: float):
         self.pwin: float = 1 / np.power(symbols, reels) + delta
 
-    def interact(self) -> float:
+    def pull(self) -> float:
         return 1 if np.random.rand() < self.pwin else 0
 ```
 
@@ -81,7 +81,7 @@ Adesso dobbiamo modellare il giocatore, che gioca alle slot machine e registra l
 ```python
 from base.Bandit import Bandit
 
-class Agent:
+class Player:
     def __init__(self, bandit: Bandit):
         self.bandit: Bandit = bandit
         self.k: int = 0
@@ -91,13 +91,13 @@ class Agent:
         self.q += (r - self.q) / (self.k + 1)
         self.k += 1
 
-    def do(self) -> float:
-        r: float = self.bandit.interact()
+    def play(self) -> float:
+        r: float = self.bandit.pull()
         self.update(r)
         return r
 ```
 
-La classe ```Agent``` ha tre attributi:
+La classe ```Player``` ha tre attributi:
 
 - ```bandit```: la slot machine con cui giocare, ossia il puntatore all'istanza della classe ```Bandit``` che simula la slot machine;
 - ```k```: numero di volte che il giocatore ha giocato;
@@ -109,17 +109,17 @@ $$
 \large n_{i}, \tilde{p}_{win_{i}}
 $$
 
-Inoltre la classe ha tre metodi:
+La classe ha inoltre tre metodi:
 
 - ```update(float)```: simula l'operazione di registrazione dei dati, ossia aggiorna il numero di volte ```k``` che il giocatore ha giocato e la probabilità stimata di vincere ```q```, in base all'esito ```r``` della giocata;
-- ```do()```: simula l'azione di giocare alla slot machine, per cui richiama il metodo ```interact()``` dell'istanza di ```Bandit```, e di registrazione dei dati tramite il metodo ```update(float)```.  
+- ```play()```: simula l'azione di giocare alla slot machine, per cui richiama il metodo ```pull()``` dell'istanza di ```Bandit```, e di registrazione dei dati tramite il metodo ```update(float)```.  
 
 Facciamo un esperimento con le due classi:
 
 ```python
 from typing import List
 from base.Bandit import Bandit
-from base.Agent import Agent
+from base.Player import Player
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -132,17 +132,17 @@ class Experiment:
         n: int = 1000000
 
         bandit: Bandit = Bandit(reels, symbols, delta)
-        agent: Agent = Agent(bandit)
+        player: Player = Player(bandit)
 
         r: List[float] = [0] * n
         for i in range(n):
-            r[i] = agent.do()
+            r[i] = player.play()
 
         rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
         plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))
 
         plt.plot([0, n - 1], [bandit.pwin, bandit.pwin], label='pwin = {0:.5f}'.format(bandit.pwin))
-        print('q = {0:.5f}  pwin = {1:.5f}'.format(agent.q, bandit.pwin))
+        print('q = {0:.5f}  pwin = {1:.5f}'.format(player.q, bandit.pwin))
 
         plt.xscale('log')
         plt.legend()
@@ -160,14 +160,14 @@ La classe ```Experiment``` ha il metodo statico ```main``` che crea l'oggetto ra
 q = 0.00115  pwin = 0.00120
 ```
 
-Ok, funziona ma non dimentichiamo che l'obiettivo è modellare il giocatore in modo che possa individuare  la slot machine con la probabilità di vincere più favorevole, per cui modifichiamo la classe ```Agent```: 
+Ok, funziona ma non dimentichiamo che l'obiettivo è modellare il giocatore in modo che possa individuare  la slot machine con la probabilità di vincere più favorevole, per cui modifichiamo la classe ```Player```: 
 
 ```python
 from typing import List
 from base.Bandit import Bandit
 import numpy as np
 
-class Agent:
+class Player:
     def __init__(self, bandits: List[Bandit]):
         self.bandits: List[Bandit] = bandits
         self.n: int = len(bandits)
@@ -181,25 +181,25 @@ class Agent:
         self.q[a] += (r - self.q[a]) / (self.k[a] + 1)
         self.k[a] += 1
 
-    def do(self) -> float:
+    def play(self) -> float:
         a: int = self.choose()
-        r: float = self.bandits[a].interact()
+        r: float = self.bandits[a].pull()
         self.update(a, r)
         return r
 ```
 
 L'attributo ```bandit``` ha lasciato il posto a ```bandits``` che contiene la lista delle slot machine cui giocare, mentre gli attributi ```k``` e ```q``` sono diventati anch'essi delle liste contenenti per ogni slot machine il numero di volte che il giocatore ha giocato e la probabilità stimata di vincere. Si è aggiunto l'attributo ```n``` che contiene il numero di slot machine.
 
-E' stato aggiunto il metodo ```choose()``` che in maniera casuale con una distribuzione uniforme sceglie la slot machine cui giocare.
+E' stato aggiunto il metodo ```choose()``` che, in maniera casuale con una distribuzione uniforme, sceglie la slot machine cui giocare.
 
-Il metodo ```update(int, float)``` è stato modificato in modo da accettare come parametro di input l'indicazione della slot machine cui giocare, mentre il metodo ```do()``` in più invoca ```choose()```, in modo da scegliere la slot machine su cui giocare.
+Il metodo ```update(int, float)``` è stato modificato in modo da accettare come parametro di input l'indicazione della slot machine cui giocare, mentre il metodo ```play()``` in più invoca ```choose()```, in modo da scegliere la slot machine su cui giocare.
 
-Facciamo un altro esperimento con tre slot machine e verifichiamo che la classe ```Agent``` riesca ad individuare quella con la probabilità di vincere più favorevole:
+Facciamo un altro esperimento con tre slot machine e verifichiamo che la classe ```Player``` riesca ad individuare quella con la probabilità di vincere più favorevole:
 
 ```python
 from typing import List
 from base.Bandit import Bandit
-from randompolicy.Agent import Agent
+from randompolicy.Player import Player
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -212,18 +212,18 @@ class Experiment:
         n: int = 1000000
 
         bandits: List[Bandit] = [Bandit(reels, symbols, delta) for delta in deltas]
-        agent: Agent = Agent(bandits)
+        player: Player = Player(bandits)
 
         r: List[float] = [0] * n
         for i in range(n):
-            r[i] = agent.do()
+            r[i] = player.play()
 
         rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
         plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))
 
         for i in range(len(bandits)):
             plt.plot([0, n - 1], [bandits[i].pwin, bandits[i].pwin], label='pwin = {0:.5f}'.format(bandits[i].pwin))
-            print('Bandit #{0} : q = {1:.5f}  pwin = {2:.5f}'.format(i, agent.q[i], bandits[i].pwin))
+            print('Bandit #{0} : q = {1:.5f}  pwin = {2:.5f}'.format(i, player.q[i], bandits[i].pwin))
 
         plt.xscale('log')
         plt.legend()
@@ -248,18 +248,18 @@ $$
 \large \frac{0.00120 + 0.0011 + 0.0009}{3}=0.00107
 $$
 
-2. Siamo riusciti ad individuare la slot machine con la probabilità di vincere a noi più favorevole, ossia è quella che ha il valore di ```q``` più alto, ossia la prima.
+2. Siamo riusciti ad individuare la slot machine con la probabilità di vincere a noi più favorevole, ossia è quella che ha il valore di ```q``` più alto, cioè la prima.
 
 3. Non abbiamo sfruttato quest'ultima informazione, in quanto abbiamo adoperato tutte le giocate e quindi tutte i gettoni a nostra disposizione, solo per individuare la slot machine migliore con la quale giocare, ma poi non ci abbiamo giocato.
 
-Miglioriamo il nostro ```Agent``` e facciamo in modo che una parte delle giocate sia adoperata per individuare la slot machine migliore con cui giocare e la parte restante per giocare alla migliore:
+Miglioriamo il nostro ```Player``` e facciamo in modo che una parte delle giocate sia adoperata per individuare la slot machine migliore con cui giocare e la parte restante per giocare alla migliore:
 
 ```python
 from typing import List
 from base.Bandit import Bandit
 import numpy as np
 
-class Agent:
+class Player:
     def __init__(self, epsilon: float, bandits: List[Bandit]):
         self.epsilon: float = epsilon
         self.bandits: List[Bandit] = bandits
@@ -280,16 +280,16 @@ class Agent:
         self.q[a] += (r - self.q[a]) / (self.k[a] + 1)
         self.k[a] += 1
 
-    def do(self) -> float:
+    def play(self) -> float:
         a: int = self.choose()
-        r: float = self.bandits[a].interact()
+        r: float = self.bandits[a].pull()
         self.update(a, r)
         return r
 ```
 
 Vediamo cos'è cambiato:
 
-- è stato aggiunto l'attributo ```epsilon``` che indica la percentuale delle giocate da adoperare per la ricerca della slot machine migliore; se ```epsilon=0.05``` significa che il 5% delle giocate verrà adoperato a questo scopo;
+- è stato aggiunto l'attributo ```epsilon``` che indica la percentuale delle giocate da adoperare per la ricerca della slot machine migliore; se ```epsilon = 0.05``` significa che il 5% delle giocate verrà adoperato a questo scopo;
 - il metodo ```choose()``` genera un numero casuale uniformemente distribuito fa 0 ed 1, se questo è inferiore a ```epsilon``` la slot machine viene scelta a caso come prima, altrimenti si sceglie quella che fino a quel momento ha la probabilità stimata di vincere più alta.
 
 Facciamo un esperimento:
@@ -297,7 +297,7 @@ Facciamo un esperimento:
 ```python
 from typing import List
 from base.Bandit import Bandit
-from epsilongreedy.Agent import Agent
+from epsilongreedy.Player import Player
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -311,18 +311,18 @@ class Experiment:
         n: int = 1000000
 
         bandits: List[Bandit] = [Bandit(reels, symbols, delta) for delta in deltas]
-        agent: Agent = Agent(epsilon, bandits)
+        player: Player = Player(epsilon, bandits)
 
         r: List[int] = [0] * n
         for i in range(n):
-            r[i] = agent.do()
+            r[i] = player.play()
 
         rewards_trend: List[float] = np.cumsum(r) / np.arange(1, n + 1)
         plt.plot(rewards_trend, label='mean reward = {0:.5f}'.format(rewards_trend[-1]))
 
         for i in range(len(bandits)):
             plt.plot([0, n - 1], [bandits[i].pwin, bandits[i].pwin], label='pwin = {0:.5f}'.format(bandits[i].pwin))
-            print('Bandit #{0} : q = {1:.5f}  pwin = {2:.5f}'.format(i, agent.q[i], bandits[i].pwin))
+            print('Bandit #{0} : q = {1:.5f}  pwin = {2:.5f}'.format(i, player.q[i], bandits[i].pwin))
 
         plt.xscale('log')
         plt.legend()
@@ -343,43 +343,43 @@ La cosa che balza all'occhio è che adesso la probabilità che abbiamo di vincer
 
 ## Cosa abbiamo imparato?
 
-Bene... traiamo le nostre conclusioni.
+Rivediamo tutto ciò che abbiamo fatto finora in un'altra ottica.
 
-~~~mermaid
-```mermaid
-sequenceDiagram
-    participant Alice
-    participant Bob
-    Alice->John: Hello John, how are you?
-    loop Healthcheck
-        John->John: Fight against hypochondria
-    end
-    Note right of John: Rational thoughts <br/>prevail...
-    John-->Alice: Great!
-    John->Bob: How about you?
-    Bob-->John: Jolly good!
-```
-~~~
+| Concetto           | Spiegazione                                                  |
+| ------------------ | ------------------------------------------------------------ |
+| **_reward_**       | La vincita alle slot machine è la **ricompensa**.            |
+| **_action_**       | Il giocare ad una slot machine è l'**azione**.               |
+| **_goal_**         | La massimizzazione delle vincite è l'**obiettivo**.          |
+| **_policy_**       | La strategia per raggiungere l'obiettivo è la **politica**.  |
+| **_action-value_** | Il valore della probabilità di vincere giocando alla slot machine _i_-esima è il **valore dell'azione** di giocare a quella slot machine. |
+| **_agent_**        | Il giocatore è l'**agente**.                                 |
+| **_environment_**  | Le slot machine sono l'**ambiente**.                         |
 
+Con questa mappa in mente, possiamo riformulare il comportamento del sistema che abbiamo modellato.
 
+| Comportamento modellato                                      | Riformulazione                                               |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Il giocatore gioca ad una delle slot machine.                | L'agente compie un'azione nell'ambiente.                     |
+| Dalle slot machine riceve il jackpot se vince, nulla in casso contrario. | Dall'ambiente riceve una ricompensa.                         |
+| Il giocatore deve stimare la probabilità di vincere per ogni slot machine. | L'agente deve stimare il valore delle azioni.                |
+| Stimata la probabilità di vincere per ogni slot machine, il giocatore ha un criterio per scegliere la slot machine cui giocare in modo da massimizzare le vincite. | Stimato il valore delle azioni, l'agente ha una politica di scelta delle azioni che gli permetta di raggiungere il suo obiettivo, ossia massimizzare la ricompensa nel lungo periodo. |
 
-Per cominciare nell'apprendimento con rinforzo ...
+Quello descritto nella colonna di destra è esattamente il contesto nel quale si cala quella branca dell'apprendimento automatico che si chiama **_apprendimento con rinforzo_**, **_reinforcemente learning_** in inglese.
 
-PARLARE DEL PROBLEMA DELL'EXPLORATION-EXPLOITATION!!!
+Nella formulazione più generale, in realtà l'ambiente ha uno **stato** che evolve in seguito alle azioni compiute dall'agente; qui non è stato descritto perché l'ambiente adoperato come esempio, l'insieme delle slot machine, è senza stato.
 
-### APPUNTI  ADDESTRAMENTO  CON  RINFORZO
+Il problema che bisogna risolvere è quello di stimare la funzione **action-value**. La cosa più importante di tutte però ed anche la più affascinante, è che l'**agente** cerca di stimare questa funzione **_adoperando l'interazione con l'ambiente e l'esperienza_**. Questo approccio è fondamentalmente diverso dalle altre due principali branche dell'apprendimento automatico che sono l'apprendimento supervisionato e quello non-supervisionato.
 
-Serve per permettere ad un <u>agente</u> di agire in un <u>ambiente</u>.
+## Esplorazione contro sfruttamento
 
-Quando l'agente compie delle azioni nell'ambiente, riceve dei <u>feedback</u> (<u>ricompense</u>) dall'ambiente. Il feedback può essere anche negativo, in questo caso piuttosto che di ricompensa si dovrebbe parlare di <u>penalità</u>, però se consideriamo la penalità come una <u>ricompensa negativa</u>, possiamo continuare ad usare il termine ricompensa.
+Ma perché nella scelta dell'azione il nostro modello sceglieva in parte un'azione casuale ed in parte quella che aveva il valore-azione più alto?
 
-L'agente deve raggiungere un <u>obiettivo</u> (<u>goal</u>).
+Un problema che si pone nell'apprendimento con rinforzo è quello di **bilanciare** l'**esplorazione** delle possibili azioni, per stimare il loro valore e lo **sfruttamento** di quelle che fino a quel momento sembrano le migliori. In questo modo si evita di sfruttare quelle azioni che sembrano quelle ottimali ma non lo sono perché non sono state esplorate anche le altre e quindi _non si ha esperienza sufficiente_. Questo problema è noto come **_exploration-exploitation dilemma_**.
 
-Le diverse <u>configurazioni</u> nelle quali può trovarsi l'ambiente costituiscono gli <u>stati</u> dell'ambiente.
+L'approccio seguito negli esempi mostrati si chiama **_eps-Greedy_**: **_eps_** rappresenta quella percentuale delle azioni che vengono scelte casualmente; **_greedy_** invece, letteralmente **_goloso_**, indica la scelta dell'azione che sembra ottimale.
 
-L'obiettivo dell'agente è <u>massimizzare le ricompense future</u> e non solo quelle immediate (<i>spiegare meglio</i>).
+## Conslusioni
 
-<u>Azione</u>: E' ciò che l'agente può fare nell'ambiente.
+Questo articolo non ha la pretesa di spiegare in maniera rigorosa e dettagliata l'apprendimento con rinforzo, ha piuttosto l'obiettivo di stimolare la vostra curiosità e far sapere che esiste anche questa branca dell'apprendimento automatico, che non è meno importante delle altre due più note: basti pensare che queste tecniche sono adoperate per la guida autonoma.
 
-**L'ambiente di trova in uno stato s(t), l'agente compie un'azione a(t), questa fa passare l'ambiente nello stato s(t+1) e l'agente riceve una ricompensa (che può essere negativa) r(t+1).**
-
+Spero vi sia piaciuto e sarei felice di ricevere i vostri suggerimenti per migliorarlo.
