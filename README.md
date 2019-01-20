@@ -17,9 +17,7 @@ Giochiamo alle slot machine!
 
 Siamo andati in un casinò retrò, quindi le slot machine sono quelle meccaniche a 3 rulli con 10 simboli ciascuno e con una leva, il braccio, in inglese _arm_, che bisogna tirare per far ruotare i rulli. Si vince quando su tutti rulli compare lo stesso simbolo. Che probabilità abbiamo di vincere?
 
-$$
-\large p_{win}=\frac{1}{10^{3}}=0.001
-$$
+![](img/eq_1.png)
 
 Un po' bassa, non per nulla le chiamano _macchinette mangia soldi_ ed i nostri amici inglesi le chiamano _bandit_, _armed bandit_ per la precisione, letteralmente _bandito bracciuto_, facendo riferimento alla leva che le aziona.
 
@@ -34,9 +32,7 @@ Dobbiamo provare a giocare con tutte, registriamo per ogni slot machine:
 
 il rapporto ci fornisce una stima della probabilità di vincere:
 
-$$
-\large \tilde{p}_{win_{i}}=\frac{n_{win_{i}}}{n_{i}}
-$$
+![](img/eq_2.png)
 
 Facciamo una simulazione adoperando Python.
 
@@ -105,9 +101,7 @@ La classe ```Player``` ha tre attributi:
 
 Gli ultimi due attributi corrispondono rispettivamente a:
 
-$$
-\large n_{i}, \tilde{p}_{win_{i}}
-$$
+![](img/eq_3.png)
 
 La classe ha inoltre tre metodi:
 
@@ -154,7 +148,7 @@ if __name__ == "__main__":
 
 La classe ```Experiment``` ha il metodo statico ```main``` che crea l'oggetto rappresentate la slot machine, quello rappresentante il giocatore, quindi esegue 1000000 di interazioni e per concludere visualizza l'andamento della probabilità stimata di vincere:
 
-![](first_test.png)
+![](img/first_test.png)
 
 ```
 q = 0.00115  pwin = 0.00120
@@ -233,7 +227,7 @@ if __name__ == "__main__":
     Experiment.main()
 ```
 
-![](random_policy.png)
+![](img/random_policy.png)
 
 ```
 Bandit #0 : q = 0.00118  pwin = 0.00120
@@ -244,9 +238,7 @@ Cosa possiamo osservare?
 
 1. La probabilità media stimata di vincere è 0.00107, esattamente uguale a quella teorica ossia, considerando che le giocate sono uniformemente distribuite fra le 3 slot machine è:
 
-$$
-\large \frac{0.00120 + 0.0011 + 0.0009}{3}=0.00107
-$$
+![](img/eq_4.png)
 
 2. Siamo riusciti ad individuare la slot machine con la probabilità di vincere a noi più favorevole, ossia è quella che ha il valore di ```q``` più alto, cioè la prima.
 
@@ -331,7 +323,7 @@ class Experiment:
 if __name__ == "__main__":
     Experiment.main()
 ```
-![](epsilon_greedy_policy.png)
+![](img/epsilon_greedy_policy.png)
 
 ```
 Bandit #0 : q = 0.00120  pwin = 0.00120
